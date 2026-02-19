@@ -1,3 +1,74 @@
 spring:
   application:
     name: employees
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${RESOURCE_SERVER:http://localhost:8082}
+  lifecycle:
+    # Maximum time to wait for active requests during shutdown
+    timeout-per-shutdown-phase: 30s
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost:3307}/interviewtest?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USER:app_admin}
+    password: ${DB_PASSWORD:admin123}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+    hikari:
+      pool-name: EmployeeHikariPool
+      # Maximum number of connections in the pool
+      maximum-pool-size: 20
+      # Minimum number of idle connections maintained
+      minimum-idle: 5
+      # Maximum time to wait for a connection from the pool
+      connection-timeout: 3000      # 3 seconds
+      # Maximum lifetime of a connection in the pool
+      # Should be shorter than MySQL wait_timeout
+      max-lifetime: 1800000         # 30 minutes
+      # Maximum idle time for connections
+      idle-timeout: 600000          # 10 minutes
+      # Timeout for connection validation
+      validation-timeout: 1000      # 1 second
+      # Optional: detect potential connection leaks (enable only for debugging)
+      leak-detection-threshold: 0   # Set to 2000-5000 ms during debugging if needed
+
+  jpa:
+    open-in-view: false             # Prevents long DB sessions across web layer
+    hibernate:
+      ddl-auto: validate            # Use validate or none in production
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+
+server:
+  port: ${PORT:8080}
+  # Enables graceful shutdown to allow in-flight requests to complete
+  shutdown: graceful
+  # Tomcat server tuning for connection handling
+  tomcat:
+    connection-timeout: 5s         # Max time to establish HTTP connection
+    threads:
+      max: 200                     # Maximum request processing threads
+      min-spare: 10                # Minimum idle threads ready
+    accept-count: 100              # Queue size when all threads are busy
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  requests:
+    enabled: true
+    file-path: logs/api-requests.log
+    masked-fields-config: classpath:masked-fields.yml
