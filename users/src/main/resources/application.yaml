@@ -1,3 +1,11 @@
 spring:
   application:
     name: users
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+
+server:
+  port: ${PORT:8081}
