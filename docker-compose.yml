@@ -1,0 +1,68 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: mysql_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass123
+      MYSQL_DATABASE: interviewtest
+      MYSQL_USER: app_admin
+      MYSQL_PASSWORD: admin123
+      TZ: UTC
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - java-test
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  users:
+    container_name: users
+    build:
+      context: ./
+      dockerfile: ./users/Dockerfile
+    ports:
+      - "8081:8081"
+    env_file: ./users/.env
+    networks:
+      - java-test
+    restart: always
+  oauth2server:
+    container_name: oauth2server
+    build:
+      context: ./
+      dockerfile: ./oauth2server/Dockerfile
+    ports:
+      - "8082:8082"
+    env_file: ./oauth2server/.env
+    networks:
+      - java-test
+    depends_on:
+      - users
+    restart: always
+  employees:
+    container_name: employees
+    build:
+      context: ./
+      dockerfile: ./employees/Dockerfile
+    ports:
+      - "8080:8080"
+    env_file: ./employees/.env
+    networks:
+      - java-test
+    depends_on:
+      - mysql
+      - oauth2server
+    restart: always
+
+volumes:
+  mysql_data:
+
+networks:
+  java-test:
+    name: java-test
